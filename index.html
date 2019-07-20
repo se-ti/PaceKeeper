@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<style>
+	body { 
+		font-family: sans-serif; 
+		font-size: 16px;
+		margin: 1em 2em; 
+	}
+		
+	input, button {
+		padding: 0.4em 0.6em; 
+		font-size: 100%; 
+	}
+	input { 
+		max-width: 4.5em;
+	}
+	input[type="text"] { 
+		text-align: right;
+	}
+	
+	
+	select {
+		padding: 0.4em 0.6em; 
+		font-size: 84%; 
+		margin: 0 2em 0 0.3em;
+	}
+	
+	input[type="date"] { 
+		max-width: 8.5em;
+		font-size: 84%; 
+		border-width: 0;
+	}
+	
+	.err,
+	.btn-err,
+	.input-err {
+		color: #ea5f18;		
+	}
+	
+	.btn-err,
+	.input-err {
+		border-color: #ea5f18;
+	}
+	
+	.btn-err:hover {
+		color: white;
+		border-color: #ea5f18;
+		background-color: #ea5f18;
+	}
+	
+	.btn-ok {
+		color: green;
+		border-color: green;
+	}
+	
+	.btn-ok:hover {
+		color: white;
+		border-color: green;
+		background-color: green;
+	}
+	
+	.btn,
+	.icon-btn {		
+		border-width: 1px;
+		border-style: solid; 
+		background-color: white;
+		border-radius: .2em;
+		font-weight: bold;		
+		
+		cursor: pointer;
+	}
+
+	.icon-btn {
+		font-size: x-large;
+		padding: 0 6px 1px;
+	}
+	button + .btn {
+		margin-left: 1em;
+	}
+	button + .icon-btn  {
+		margin-left: 0.666em;
+	}
+	
+	.btn {
+		border-radius: .3em;
+		padding: 0.344em 0.368em;
+	}
+	
+	.btn ~.icon-btn,
+	.icon-btn ~.btn	{
+		vertical-align: top;
+	}
+	
+
+	.hover {
+		visibility: hidden;
+	}
+	
+	tr:hover .hover {
+		visibility: visible;
+	}
+	
+	span.err {
+		margin-left: 1em;	
+	}
+		
+	.unit {
+		font-weight: normal;
+		font-size: 90%;
+	}
+	
+	#exp {
+		display: inline-block;
+		vertical-align: text-top;
+		margin-top: -3px;
+		margin-left: 1em;
+		font-weight: normal;
+	}
+	
+	</style>
+	<style>
+	
+	table#main {
+		border-collapse: collapse; 
+		margin-top: 1em;
+		margin-bottom: 0.5em;
+	}
+	
+	table#main th {
+		padding-left: 1em; 
+		padding-right: 1em;
+	}	
+	
+	table#main td {
+		padding: .3em .3em ;
+		min-width: 3em;
+		text-align: right;
+	}
+
+	table#main td:first-child {
+		text-align:left;
+	}
+	
+	table#main td:first-child,
+	table#main th:first-child {
+		padding-left : 0;
+	}
+	
+	
+	table#main td:last-child,
+	table#main th:last-child {
+		text-align: left;
+		padding-right: 0;
+		padding-left: .3em; 
+	}
+	
+	table#main td:nth-child(5) {
+		padding-right: 1em;
+	}
+	
+	table#main td:nth-child(6) {
+		padding-right: 2em;
+	}
+		
+	</style>
+</head>
+<body>	
+	<h3>PaceKeeper</h3><br/>
+	<table id="main" zborder="1">
+		<thead><tr>
+		<th></th><th></th>
+		<th>расстояние<br><span class="unit">м</span></th>
+		<th>время<br><span class="unit">&nbsp;</span></th>
+		<th>темп<br><span class="unit">мин/км</span></th><th>скорость<br><span class="unit">км/ч</span></th>
+		
+		<th><button id="addRow" class="icon-btn btn-ok">+</button> <a id="exp" href="" download>Экспорт</a></th></tr></thead>
+		<tbody></tbody>
+	</table>
+	
+	
+	<ul>
+	
+	<!--li>экспорт -- корректное время темпа, русский язык, кнопочка</li>
+	<li>??? сортировки-фильтры?</li>
+	<li>хранить все в строках?</li-->
+	<!-- <li></li> -->
+	</ul>
+<script>
+function get(id) {
+	return document.getElementById(id);
+}
+
+function $cd(ctx, func) {
+	if (!func || func.constructor != Function)
+		return null;
+	return function() {
+		func.apply(ctx, arguments);
+	};
+}
+
+String._htmlSubstitutes = [{r:/&/gi, t:'&amp;'},
+    {r:/</gi, t:'&lt;'},
+    {r:/\>/gi, t:'&gt;'},
+    {r:/'/gi, t:'&apos;'},
+    {r:/"/gi, t:'&quot;'}];
+
+String.toHTML = function(str) {
+    if (!str)
+        return '';
+
+    if (typeof(str) !== 'string' && !(str instanceof String))
+        throw Error("Can't toHTML not a string");
+
+    if (!str.replace)
+        throw Error("String object desn't have replace method");
+    
+    var res = str;
+    var arr = String._htmlSubstitutes;
+
+    for (var i = 0; i < arr.length; i++)
+        res = res.replace(arr[i].r, arr[i].t);
+    return res;
+}
+
+function padLeft(str, minLen, chr) {
+	var len = ('' + (str != null ? str : '' )).length;
+	
+	return len >= minLen ? str : (chr[0].repeat(minLen - len) + str);
+}
+
+function formatInt(val) {
+	var part;
+	var parts = [];
+	var left = Math.trunc(val);
+	var frac = this.distance - left;
+	
+	do {
+		part = left % 1000;
+		left = (left - part) / 1000			
+		parts.unshift(left != 0 ? padLeft(part, 3, '0') : part);
+	} while (left != 0)
+		
+	return parts.join(' '); // + (frac != 0 ? ('' + frac).substring(1) : '');
+}
+</script>
+
+<script>
+
+var CApp = function() {
+	this._data = null;
+	this._body = null;
+	
+	this._d_onDelRow = $cd(this, this._onDelRow);
+	this._d_onCopyRow = $cd(this, this._onCopyRow);
+	this._d_onTypeChanged = $cd(this, this._onTypeChanged);
+	this._d_onDateChanged = $cd(this, this._onDateChanged);
+	this._d_onInputChanged = $cd(this, this._onInputChanged);
+	this._d_delayedChange = $cd(this, this._delayedChange);
+};
+
+CApp.prototype = {
+
+	_key: "paces",
+
+	init: function() {	
+		this._body = document.querySelector('#main tbody');
+		
+		this._on(get('addRow'), 'click', e => {this._prependRow(new CData()); this._save();});
+		this._on(get('exp'), 'click', e => this._onExport(e));
+		
+		this._load();
+		if (this._data.length == 0)
+			this._data.push(new CData());
+		this._render();
+	},
+		
+	_load: function() {
+		var raw = '';
+		try {
+			raw = window.localStorage.getItem(this._key) || '';
+		}
+		catch(e) {
+			raw = '';
+		}
+		raw = (raw || '') != '' ? JSON.parse(raw) : [];
+		
+		this._data = raw.map(item => new CData(item));
+	},
+	
+	_save: function() {
+		if (this._data && this._data.length > 0)
+			window.localStorage.setItem(this._key, JSON.stringify(this._data));
+		else 
+			window.localStorage.removeItem(this._key);
+	},
+	
+	_render: function() {
+		if (!this._body)
+			return;
+			
+		this._body.innerHTML = '';
+		this._data.forEach((d, idx) => this._updateRow(this._addRow(idx), d));
+	},
+	
+	_addRow: function(index) {
+		if (index == undefined || index < 0)
+			index = 0; //this._body.rows.length;
+		
+		var td;
+		var row = this._body.insertRow(index);
+	
+	    row.insertCell(0).innerHTML = '<input type="date"/>';
+		td = row.insertCell(1);
+		td.innerHTML = '<select><option value="2">Бег</option><option value="3">Вело</option><option value="4">Лыжи</option></select>'; // <option value=""></option>
+		this._on(td.querySelector('select'), 'change', this._d_onTypeChanged);
+
+		row.insertCell(2).innerHTML = '<input type="text" maxlength="7" placeholder="42 195" data-type="dist"/>';	
+		row.insertCell(3).innerHTML = '<input type="text" placeholder="2:01:38" maxlength="9" data-type="time"/>';
+		row.insertCell(4);	
+		row.insertCell(5);
+		
+		td = row.insertCell(6);
+		td.innerHTML = '<button class="btn btn-ok hover">x2</button> <button class="icon-btn btn-err hover">&times;</button>'; // 
+		this._on(td.querySelector('button.btn-err'), 'click', this._d_onDelRow);
+		this._on(td.querySelector('button.btn-ok'), 'click', this._d_onCopyRow);
+		
+		var inputs = row.querySelectorAll('input');
+		this._on(inputs[0], 'change', this._d_onDateChanged);
+		this._on(inputs[1], 'change', this._d_onInputChanged);
+		this._on(inputs[1], 'paste', this._d_delayedChange)
+		this._on(inputs[1], 'cut', this._d_delayedChange)
+		this._on(inputs[2], 'change', this._d_onInputChanged);
+		this._on(inputs[2], 'paste', this._d_delayedChange)
+		this._on(inputs[2], 'cut', this._d_delayedChange)
+		return row;
+	},
+		
+	_updateRow: function(row, data) {
+		if (!row || !data)
+			return;
+			
+		var inputs = row.querySelectorAll('input');
+		this._setNotEmpty(inputs[0], data.date);
+		row.cells[1].querySelector('select').value = data.type || CData.types.Ski;
+		this._setNotEmpty(inputs[1], data.getDistance());
+		this._setNotEmpty(inputs[2], data.getTime());
+		row.cells[4].innerHTML = data.getPace();
+		row.cells[5].innerHTML = data.getSpeed();
+	},
+	
+	_setNotEmpty: function(input, val) {
+		if (input && (val || '') != '')
+			input.value = val;
+	},
+	
+	_prependRow: function(pace) {
+		if (!pace)
+			return;
+		this._data.unshift(pace);
+		this._updateRow(this._addRow(), pace);
+	},
+	
+	_onInputChanged: function(e) {
+		var row = e.target.parentNode.parentNode;
+		var idx = row.sectionRowIndex;
+		
+		var data = this._data[idx];
+		var type = e.target.getAttribute('data-type');
+		var res = data.setStrVal(e.target.value, type);
+		
+		e.target.classList.toggle('input-err', res.val == null);		
+		this._toggleError(row, res.err, type);
+		if (res.val == null || !data.isReady())
+			return;
+		
+		this._updateRow(row, data);
+		this._save();
+	},
+	
+	_delayedChange: function(e) {	// postprocess cut | pase
+		window.setTimeout(() => this._onInputChanged(e), 0);
+	},
+	
+	_onTypeChanged: function(e) {
+		var row = e.target.parentNode.parentNode;
+		this._data[row.sectionRowIndex].type = e.target.value;
+		this._save();
+	},
+	
+	_onDateChanged: function(e) {
+		var row = e.target.parentNode.parentNode;
+		this._data[row.sectionRowIndex].date = e.target.value;
+		this._save();
+	},
+	
+	/*_onDataChanged: function() {		
+		this._save();
+	},*/
+	
+	_toggleError: function(row, message, type) {
+		message = message || '';
+
+		var elem = row.querySelector(`span.err[data-type="${type}"]`);
+		if (elem == null) {
+			if (message == '')
+				return;
+				
+			row.querySelector('td:last-child').innerHTML += `<span class="err" data-type="${type}"></span>`;
+			elem = row.querySelector(`span.err[data-type="${type}"]`);
+		}
+		console.log(message);
+		elem.innerHTML = message ;
+		elem.display = message == '' ? 'none' : '';
+	},
+
+	_onDelRow: function (e) {
+		if (!e.shiftKey && !confirm('удалить строку?'))
+			return;
+			
+		var idx = e.target.parentNode.parentNode.sectionRowIndex;
+		this._body.deleteRow(idx);
+		this._data.splice(idx, 1);		
+		
+		if (this._body.rows.length == 0)
+			this._prependRow(new CData());
+
+		this._save();
+	},
+	
+	_onCopyRow: function(e) {
+		var row = e.target.parentNode.parentNode;		
+		this._prependRow(new CData(this._data[row.sectionRowIndex]));
+		this._save();
+	},
+	
+	_onExport: function(e) {
+		var dataStr = this._data.filter(d => d.isReady())
+			.map(d => `${d.getDistance()};${d.getTime()};${d.getPace(true)};${('' + d.getSpeed()).replace(/\./mg, ',')}`)
+			.join('%0D%0A');
+			
+		e.target.href = 'data:text/csv;charset=utf-8,dist;time;pace;speed%0D%0A' + dataStr;
+	},
+	
+	_on: function(elem, event, handler) {
+		if (elem && handler && (event || '') != '')
+			elem.addEventListener(event, handler, false);
+	},
+};
+
+var CData = function(src) {
+	this.distance = src ? src.distance : null;	// meters
+	this.seconds = src ? src.seconds : null;
+	this.pace = src ? src.pace : null;		// sec per km
+	this.speed = src ? src.speed : null;	// meters per sec
+	this.type = src ? src.type : CData.types.Run;
+	
+	this.date = null;
+	if (src && src.date)
+		this.date = src.date;
+	else {
+		this.date = new Date().toISOString();
+		this.date = this.date.substr(0, this.date.indexOf('T'));
+	}	
+	
+	this._last = [];
+	if (src) {
+		if (src._last)
+			this._last = src._last;
+		else 
+			this._last = [src._src1, src._src2].filter(v => v != null);
+	}
+};
+
+
+CData.types = {
+	Undef: 0,
+	Walk: 1,
+	Run: 2,
+	Bike: 3,
+	Ski: 4,
+	Auto: 5
+};
+
+CData._parseFloat = function (str) {
+	var d = +((str || '').replace(/\s+/mg, ''));
+	return {
+		val: isNaN(d) ? null : d,
+		err: isNaN(d) ? `некорректное число: '${str}'` : null
+	};
+};
+
+CData._parseTime = function(str) {
+	var sec = 0;	
+	var parts = (str || '').split(':');	
+	parts.forEach((v, idx) => {v = (v || '').replace(/\s+/mg, ''); sec = isNaN(sec) || isNaN(+v)? NaN : (+v + sec*60)});
+	
+	return {
+		val: isNaN(sec) ? null : sec,
+		err: isNaN(sec) ? `некорректное время: '${str}'` : null
+	};	
+};
+
+
+CData.prototype = {
+	_mappers: {	'dist' : {field: 'distance', parser: CData._parseFloat },
+		'time' : {field: 'seconds', parser: CData._parseTime },
+		'pace' : {field: 'pace', parser: CData._parseTime },
+		'speed' : {field: 'speed', parser: CData._parseFloat }
+	},
+
+	setStrVal: function(value, type) {
+
+		var mp = this._mappers[type];
+		if (!mp)
+			return {err: `неизвестный тип поля '${type}'`};
+			
+		var res = mp.parser(value);
+		this[mp.field] = res.val;
+	
+		this._last = this._last.filter(v => v != null && v != type);
+		this._last.push(res.val != null ? type : null);
+		
+		if (res.val == null)
+			return res;
+			
+		if (this.isReady())
+			this._update();
+		return res;
+	}, 
+	
+	isReady: function() {
+		return this._last.length >= 2 && this._last[this._last.length - 1] != null; // есть 2 нормально заполненных и последний не ошибочный
+	},
+	
+	_update: function() {
+	/*		pace-speed
+			  /   \
+			 /     \
+		  time --- dist 
+	*/
+	
+		this.pace = this.seconds * 1000.0/this.distance;
+		this.speed = 1.0 * this.distance/this.seconds;
+	},
+	
+	getDistance: function() {
+		return Number.isFinite(this.distance) ? formatInt(this.distance) : ''; 
+	},
+
+	getTime: function() {
+		return Number.isFinite(this.seconds) ? this._secToHMS(this.seconds) : '';
+	},
+	
+	getPace: function(useHours) {
+		if (!this.isReady() || !Number.isFinite(this.pace))
+			return '';
+			
+		if (useHours)
+			return this._secToHMS(this.pace);
+
+		var minutes = Math.trunc(this.pace / 60);
+		return minutes + ':' + padLeft(Math.round(this.pace - 60 * minutes), 2, '0');
+	},
+	
+	getSpeed: function() {
+		if (!this.isReady() || !Number.isFinite(this.speed))
+			return '';
+			
+		return Math.round(this.speed/10.0 * 3600) / 100; 
+	},
+	
+	_secToHMS: function(sec) {
+		return `${Math.trunc(sec/3600)}:${padLeft(Math.trunc(sec/60)%60 , 2, '0')}:${padLeft(Math.round(sec%60), 2, '0')}`;
+	}
+};
+
+/*
+function recalcRow(distance, row)
+{
+	var cells = row.cells;
+	var timeInput = cells[1].querySelectorAll('input')[0];
+	var seconds = parseTime(timeInput.value);
+	if (seconds == null || distance <= 0.01)
+	{
+		cells[2].innerHTML = '';
+		cells[3].innerHTML = '';
+		return;
+	}
+	
+	var val = `${Math.trunc(seconds/3600)}:${padLeft(Math.trunc(seconds/60)%60 , 2, '0')}:${padLeft(seconds%60, 2, '0')}`;
+	if (val != timeInput.value)
+		timeInput.value = val;
+		
+	var pace = Math.round(seconds*1000.0/distance) / 60;	
+	cells[2].innerHTML = Math.trunc(pace) + ':' + padLeft(Math.round(60 * (pace - Math.trunc(pace))), 2, '0');	
+	cells[3].innerHTML = Math.round(distance/10/seconds *3600) / 100;
+	
+	if (row.rowIndex == getTbody().rows.length)
+		addRow(distance);
+}*/
+
+new CApp().init();
+
+</script>
+</body></html>
