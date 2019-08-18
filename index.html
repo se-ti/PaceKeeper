@@ -21,6 +21,10 @@
 	input[type="text"] { 
 		text-align: right;
 	}
+	input.comment { 
+		max-width: inherit;
+		text-align: left;
+	}
 	
 	
 	select {
@@ -176,6 +180,7 @@
 		<th>расстояние<br><span class="unit">м</span></th>
 		<th>время<br><span class="unit">&nbsp;</span></th>
 		<th>темп<br><span class="unit">мин/км</span></th><th>скорость<br><span class="unit">км/ч</span></th>
+		<th>комментарий<br><span class="unit">&nbsp;</span></th>
 		
 		<th><button id="addRow" class="icon-btn btn-ok">+</button> <a id="exp" href="" download>Экспорт</a></th></tr></thead>
 		<tbody></tbody>
@@ -184,7 +189,7 @@
 	
 	<ul>
 	
-	<!--li>экспорт -- корректное время темпа, русский язык, кнопочка</li>
+	<!--li>экспорт -- корректное время темпа ???, кнопочка</li>
 	<li>??? сортировки-фильтры?</li>
 	<li>хранить все в строках?</li-->
 	<!-- <li></li> -->
@@ -255,9 +260,7 @@ var CApp = function() {
 	this._body = null;
 	
 	this._d_onDelRow = $cd(this, this._onDelRow);
-	this._d_onCopyRow = $cd(this, this._onCopyRow);
-	this._d_onTypeChanged = $cd(this, this._onTypeChanged);
-	this._d_onDateChanged = $cd(this, this._onDateChanged);
+	this._d_onCopyRow = $cd(this, this._onCopyRow);	
 	this._d_onInputChanged = $cd(this, this._onInputChanged);
 	this._d_delayedChange = $cd(this, this._delayedChange);
 };
@@ -316,26 +319,28 @@ CApp.prototype = {
 	    row.insertCell(0).innerHTML = '<input type="date"/>';
 		td = row.insertCell(1);
 		td.innerHTML = '<select><option value="2">Бег</option><option value="3">Вело</option><option value="4">Лыжи</option></select>'; // <option value=""></option>
-		this._on(td.querySelector('select'), 'change', this._d_onTypeChanged);
+		this._on(td.querySelector('select'), 'change', (e) => this._onDataFieldChanged(e, 'type'));
 
 		row.insertCell(2).innerHTML = '<input type="text" maxlength="7" placeholder="42 195" data-type="dist"/>';	
 		row.insertCell(3).innerHTML = '<input type="text" placeholder="2:01:38" maxlength="9" data-type="time"/>';
 		row.insertCell(4);	
 		row.insertCell(5);
+		row.insertCell(6).innerHTML = '<input class="comment" type="text" placeholder="comment" size="15"/>';
 		
-		td = row.insertCell(6);
+		td = row.insertCell(7);
 		td.innerHTML = '<button class="btn btn-ok hover">x2</button> <button class="icon-btn btn-err hover">&times;</button>'; // 
 		this._on(td.querySelector('button.btn-err'), 'click', this._d_onDelRow);
 		this._on(td.querySelector('button.btn-ok'), 'click', this._d_onCopyRow);
 		
 		var inputs = row.querySelectorAll('input');
-		this._on(inputs[0], 'change', this._d_onDateChanged);
+		this._on(inputs[0], 'change', (e) => this._onDataFieldChanged(e, 'date'));
 		this._on(inputs[1], 'change', this._d_onInputChanged);
 		this._on(inputs[1], 'paste', this._d_delayedChange)
 		this._on(inputs[1], 'cut', this._d_delayedChange)
 		this._on(inputs[2], 'change', this._d_onInputChanged);
 		this._on(inputs[2], 'paste', this._d_delayedChange)
 		this._on(inputs[2], 'cut', this._d_delayedChange)
+		this._on(inputs[3], 'change', (e) => this._onDataFieldChanged(e, 'comment'));
 		return row;
 	},
 		
@@ -350,6 +355,7 @@ CApp.prototype = {
 		this._setNotEmpty(inputs[2], data.getTime());
 		row.cells[4].innerHTML = data.getPace();
 		row.cells[5].innerHTML = data.getSpeed();
+		inputs[3].value = data.comment;
 	},
 	
 	_setNotEmpty: function(input, val) {
@@ -385,17 +391,14 @@ CApp.prototype = {
 		window.setTimeout(() => this._onInputChanged(e), 0);
 	},
 	
-	_onTypeChanged: function(e) {
+	_onDataFieldChanged: function(e, field) {
+		if ((field || '') == '')
+			return;
+		
 		var row = e.target.parentNode.parentNode;
-		this._data[row.sectionRowIndex].type = e.target.value;
-		this._save();
-	},
-	
-	_onDateChanged: function(e) {
-		var row = e.target.parentNode.parentNode;
-		this._data[row.sectionRowIndex].date = e.target.value;
-		this._save();
-	},
+		this._data[row.sectionRowIndex][field] = e.target.value;
+		this._save();	
+	},	
 	
 	/*_onDataChanged: function() {		
 		this._save();
@@ -439,10 +442,20 @@ CApp.prototype = {
 	
 	_onExport: function(e) {
 		var dataStr = this._data.filter(d => d.isReady())
-			.map(d => `${d.getDistance()};${d.getTime()};${d.getPace(true)};${('' + d.getSpeed()).replace(/\./mg, ',')}`)
+			.map(d => `${d.getDistance()};${d.getTime()};${d.getPace(true)};${('' + d.getSpeed()).replace(/\./mg, ',')};${this._csvEscape(d.comment || '')}`)
 			.join('%0D%0A');
 			
-		e.target.href = 'data:text/csv;charset=utf-8,dist;time;pace;speed%0D%0A' + dataStr;
+		e.target.href = 'data:text/csv;charset=utf-8,%EF%BB%BFдистанция;время;темп;скорость;комментарий%0D%0A' + dataStr;
+	},
+	
+	_csvEscape: function(str) {
+		if ((str || '') == '')
+			return '';
+			
+		if (!/[\r\n\"]/mg.test(str))
+			return str;
+		
+		return '"' + str.replace('"', '""') + '"';
 	},
 	
 	_on: function(elem, event, handler) {
@@ -457,6 +470,7 @@ var CData = function(src) {
 	this.pace = src ? src.pace : null;		// sec per km
 	this.speed = src ? src.speed : null;	// meters per sec
 	this.type = src ? src.type : CData.types.Run;
+	this.comment = (src ? src.comment : '') || '';
 	
 	this.date = null;
 	if (src && src.date)
@@ -495,7 +509,7 @@ CData._parseFloat = function (str) {
 
 CData._parseTime = function(str) {
 	var sec = 0;	
-	var parts = (str || '').split(':');	
+	var parts = (str || '').replace(/[\^ж\-]/gi, ':').split(':');	
 	parts.forEach((v, idx) => {v = (v || '').replace(/\s+/mg, ''); sec = isNaN(sec) || isNaN(+v)? NaN : (+v + sec*60)});
 	
 	return {
@@ -562,9 +576,8 @@ CData.prototype = {
 		if (useHours)
 			return this._secToHMS(this.pace);
 
-		var sec = Math.round(this.pace);
-		var minutes = Math.trunc(sec / 60);
-		return minutes + ':' + padLeft(sec - 60 * minutes, 2, '0');
+		var sec = Math.round(this.pace);		
+		return Math.trunc(sec / 60) + ':' + padLeft(sec % 60, 2, '0');
 	},
 	
 	getSpeed: function() {
@@ -575,34 +588,10 @@ CData.prototype = {
 	},
 	
 	_secToHMS: function(sec) {
-		return `${Math.trunc(sec/3600)}:${padLeft(Math.trunc(sec/60)%60 , 2, '0')}:${padLeft(Math.round(sec%60), 2, '0')}`;
+		sec = Math.round(sec);
+		return `${Math.trunc(sec/3600)}:${padLeft(Math.trunc(sec/60)%60 , 2, '0')}:${padLeft(sec%60, 2, '0')}`;
 	}
 };
-
-/*
-function recalcRow(distance, row)
-{
-	var cells = row.cells;
-	var timeInput = cells[1].querySelectorAll('input')[0];
-	var seconds = parseTime(timeInput.value);
-	if (seconds == null || distance <= 0.01)
-	{
-		cells[2].innerHTML = '';
-		cells[3].innerHTML = '';
-		return;
-	}
-	
-	var val = `${Math.trunc(seconds/3600)}:${padLeft(Math.trunc(seconds/60)%60 , 2, '0')}:${padLeft(seconds%60, 2, '0')}`;
-	if (val != timeInput.value)
-		timeInput.value = val;
-		
-	var pace = Math.round(seconds*1000.0/distance) / 60;	
-	cells[2].innerHTML = Math.trunc(pace) + ':' + padLeft(Math.round(60 * (pace - Math.trunc(pace))), 2, '0');	
-	cells[3].innerHTML = Math.round(distance/10/seconds *3600) / 100;
-	
-	if (row.rowIndex == getTbody().rows.length)
-		addRow(distance);
-}*/
 
 new CApp().init();
 
