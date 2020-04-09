@@ -242,7 +242,7 @@ function formatInt(val) {
 	var part;
 	var parts = [];
 	var left = Math.trunc(val);
-	var frac = this.distance - left;
+	var frac = val - left;
 	
 	do {
 		part = left % 1000;
