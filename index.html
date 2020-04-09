@@ -195,6 +195,7 @@
 	<!-- <li></li> -->
 	</ul>
 <script>
+"use strict";
 function get(id) {
 	return document.getElementById(id);
 }
@@ -203,7 +204,7 @@ function $cd(ctx, func) {
 	if (!func || func.constructor != Function)
 		return null;
 	return function() {
-		func.apply(ctx, arguments);
+		return func.apply(ctx, arguments);
 	};
 }
 
@@ -254,6 +255,7 @@ function formatInt(val) {
 </script>
 
 <script>
+"use strict";
 
 var CApp = function() {
 	this._data = null;
@@ -325,7 +327,7 @@ CApp.prototype = {
 		row.insertCell(3).innerHTML = '<input type="text" placeholder="2:01:38" maxlength="9" data-type="time"/>';
 		row.insertCell(4);	
 		row.insertCell(5);
-		row.insertCell(6).innerHTML = '<input class="comment" type="text" placeholder="comment" size="15"/>';
+		row.insertCell(6).innerHTML = '<input class="comment" type="text" placeholder="comment" size="20"/>';
 		
 		td = row.insertCell(7);
 		td.innerHTML = '<button class="btn btn-ok hover">x2</button> <button class="icon-btn btn-err hover">&times;</button>'; // 
