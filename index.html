@@ -334,7 +334,7 @@ CApp.prototype = {
 		row.insertCell(5);
 		row.insertCell(6).innerHTML = '<input class="comment" type="text" placeholder="comment" size="20"/>';
 		td = row.insertCell(7);
-		td.innerHTML = '<input type="text" placeholder="track link" size="20"/><a href="" target="_blank" style="display:none;">трек</a><span style="display:none; text-decoration: underline; margin-left:0.5em;">&#x1F58A</span>';
+		td.innerHTML = '<input type="text" placeholder="track link" size="20"/><a href="" target="_blank" style="display:none;">трек</a><span style="display:none; cursor: pointer; margin-left:0.5em;">&#x1F58A</span>';
 		td.className = 'href';
 		
 		td = row.insertCell(8);
@@ -351,7 +351,7 @@ CApp.prototype = {
 		this._on(inputs[2], 'paste', this._d_delayedChange)
 		this._on(inputs[2], 'cut', this._d_delayedChange)
 		this._on(inputs[3], 'change', (e) => this._onDataFieldChanged(e, 'comment'));
-		this._on(inputs[4], 'change', (e) => this._onDataFieldChanged(e, 'trackHref'));
+		this._on(inputs[4], 'change', (e) => {this._onDataFieldChanged(e, 'trackHref'); this._setupTrackField(row.cells[7], this._data[index]);});
 		this._on(row.cells[7].querySelector('span'), 'click', e => this._setupTrackField(row.cells[7], null, true));
 		return row;
 	},
