@@ -418,18 +418,17 @@ CApp.prototype = {
 		this._save();	
 	},
 
-	_setupTrackField: function(cell, trackHref, forceShowInput) {
-		var showInput = forceShowInput; // || (trackHref || '').trim() == '';
-		var href = (trackHref || '').trim();
+	_setupTrackField: function(cell, trackHref, showInput) {		
+		var href = (trackHref || '').trim();		
 		
-		var input = cell.querySelector('input');
-		input.style.display = showInput ? '' : 'none';		
 		var a = cell.querySelector('a');
-		a.style.display = showInput || href == '' ? 'none' : ''; 
+		var input = cell.querySelector('input');
 		
 		if (trackHref != null)
 			a.href = input.value = href;
 		
+		input.style.display = showInput ? '' : 'none';		
+		a.style.display = showInput || href == '' ? 'none' : ''; 
 		cell.querySelector('span').style.display = showInput ? 'none' : '';
 	},
 	
