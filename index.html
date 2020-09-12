@@ -351,7 +351,7 @@ CApp.prototype = {
 		this._on(inputs[2], 'paste', this._d_delayedChange)
 		this._on(inputs[2], 'cut', this._d_delayedChange)
 		this._on(inputs[3], 'change', (e) => this._onDataFieldChanged(e, 'comment'));
-		this._on(inputs[4], 'change', (e) => {this._onDataFieldChanged(e, 'trackHref'); this._setupTrackField(row.cells[7], this._data[index]);});
+		this._on(inputs[4], 'change', (e) => {this._onDataFieldChanged(e, 'trackHref'); this._setupTrackField(row.cells[7], this._data[index].trackHref);});
 		this._on(row.cells[7].querySelector('span'), 'click', e => this._setupTrackField(row.cells[7], null, true));
 		return row;
 	},
