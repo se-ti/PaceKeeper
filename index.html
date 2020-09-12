@@ -181,6 +181,7 @@
 		<th>время<br><span class="unit">&nbsp;</span></th>
 		<th>темп<br><span class="unit">мин/км</span></th><th>скорость<br><span class="unit">км/ч</span></th>
 		<th>комментарий<br><span class="unit">&nbsp;</span></th>
+		<th>комментарий<br><span class="unit">трек</span></th>
 		
 		<th><button id="addRow" class="icon-btn btn-ok">+</button> <a id="exp" href="" download class="th-link">Экспорт</a> <a href="https://nakarte.me/" class="th-link" target="_blank">nakarte</a></th></tr></thead>
 		<tbody></tbody>
@@ -328,8 +329,9 @@ CApp.prototype = {
 		row.insertCell(4);	
 		row.insertCell(5);
 		row.insertCell(6).innerHTML = '<input class="comment" type="text" placeholder="comment" size="20"/>';
+		row.insertCell(7).innerHTML = '<input class="comment" type="text" placeholder="comment" size="20"/><a href="" target="_blank" style="display:none;">трек</a><span style="display:none;">e</span>';
 		
-		td = row.insertCell(7);
+		td = row.insertCell(8);
 		td.innerHTML = '<button class="btn btn-ok hover">x2</button> <button class="icon-btn btn-err hover">&times;</button>'; // 
 		this._on(td.querySelector('button.btn-err'), 'click', this._d_onDelRow);
 		this._on(td.querySelector('button.btn-ok'), 'click', this._d_onCopyRow);
@@ -343,6 +345,8 @@ CApp.prototype = {
 		this._on(inputs[2], 'paste', this._d_delayedChange)
 		this._on(inputs[2], 'cut', this._d_delayedChange)
 		this._on(inputs[3], 'change', (e) => this._onDataFieldChanged(e, 'comment'));
+		this._on(inputs[4], 'change', (e) => this._onDataFieldChanged(e, 'trackHref'));
+		this._on(row.cells[7].querySelector('span'), 'click', e => this._setupTrackField(row.cells[7], null, true));
 		return row;
 	},
 		
@@ -358,6 +362,8 @@ CApp.prototype = {
 		row.cells[4].innerHTML = data.getPace();
 		row.cells[5].innerHTML = data.getSpeed();
 		inputs[3].value = data.comment;
+		inputs[4].value = data.trackHref;
+		this._setupTrackField(row.cells[7], data.trackHref);
 	},
 	
 	_setNotEmpty: function(input, val) {
@@ -389,7 +395,7 @@ CApp.prototype = {
 		this._save();
 	},
 	
-	_delayedChange: function(e) {	// postprocess cut | pase
+	_delayedChange: function(e) {	// postprocess cut | paste
 		window.setTimeout(() => this._onInputChanged(e), 0);
 	},
 	
@@ -400,7 +406,23 @@ CApp.prototype = {
 		var row = e.target.parentNode.parentNode;
 		this._data[row.sectionRowIndex][field] = e.target.value;
 		this._save();	
-	},	
+	},
+
+	_setupTrackField: function(cell, trackHref, forceShowInput) {
+		var showInput = forceShowInput || (trackHref || '').trim() == '';
+		
+		var input = cell.querySelector('input');
+		input.style.display = showInput ? '' : 'none';		
+		var a = cell.querySelector('a');
+		a.style.display = showInput ? 'none' : ''; 
+		
+		if (trackHref != null) {
+			input.value = (trackHref || '').trim();
+			a.href = (trackHref || '').trim();
+		}
+		
+		cell.querySelector('span').style.display = showInput ? 'none' : '';
+	},
 	
 	/*_onDataChanged: function() {		
 		this._save();
@@ -473,6 +495,7 @@ var CData = function(src) {
 	this.speed = src ? src.speed : null;	// meters per sec
 	this.type = src ? src.type : CData.types.Run;
 	this.comment = (src ? src.comment : '') || '';
+	this.trackHref = (src ? src.trackHref : '') || '';
 	
 	this.date = null;
 	if (src && src.date)
