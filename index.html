@@ -338,7 +338,7 @@ CApp.prototype = {
 		row.insertCell(5);
 		row.insertCell(6).innerHTML = '<input class="comment" type="text" placeholder="comment" size="20"/>';
 		td = row.insertCell(7);
-		td.innerHTML = '<input type="text" placeholder="track link" size="20"/><a href="" target="_blank" style="display:none;">трек</a><span style="display:none;" class="hover edit">&#x1F58A</span>';
+		td.innerHTML = '<input type="text" placeholder="track url" size="20"/><a href="" target="_blank" style="display:none;">трек</a><span style="display:none;" class="hover edit">&#x1F58A</span>';
 		td.className = 'href';
 		
 		td = row.insertCell(8);
@@ -360,7 +360,7 @@ CApp.prototype = {
 		return row;
 	},
 		
-	_updateRow: function(row, data) {
+	_updateRow: function(row, data, forceEditableHref) {
 		if (!row || !data)
 			return;
 			
@@ -373,7 +373,7 @@ CApp.prototype = {
 		row.cells[5].innerHTML = data.getSpeed();
 		inputs[3].value = data.comment;
 		inputs[4].value = data.trackHref;
-		this._setupTrackField(row.cells[7], data.trackHref);
+		this._setupTrackField(row.cells[7], data.trackHref, forceEditableHref);
 	},
 	
 	_setNotEmpty: function(input, val) {
@@ -385,7 +385,7 @@ CApp.prototype = {
 		if (!pace)
 			return;
 		this._data.unshift(pace);
-		this._updateRow(this._addRow(), pace);
+		this._updateRow(this._addRow(), pace, true);
 	},
 	
 	_onInputChanged: function(e) {
