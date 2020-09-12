@@ -415,17 +415,16 @@ CApp.prototype = {
 	},
 
 	_setupTrackField: function(cell, trackHref, forceShowInput) {
-		var showInput = forceShowInput || (trackHref || '').trim() == '';
+		var showInput = forceShowInput; // || (trackHref || '').trim() == '';
+		var href = (trackHref || '').trim();
 		
 		var input = cell.querySelector('input');
 		input.style.display = showInput ? '' : 'none';		
 		var a = cell.querySelector('a');
-		a.style.display = showInput ? 'none' : ''; 
+		a.style.display = showInput || href == '' ? 'none' : ''; 
 		
-		if (trackHref != null) {
-			input.value = (trackHref || '').trim();
-			a.href = (trackHref || '').trim();
-		}
+		if (trackHref != null)
+			a.href = input.value = href;
 		
 		cell.querySelector('span').style.display = showInput ? 'none' : '';
 	},
