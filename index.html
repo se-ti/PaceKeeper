@@ -24,8 +24,7 @@
 	input.comment { 
 		max-width: inherit;
 		text-align: left;
-	}
-	
+	}	
 	
 	select {
 		padding: 0.4em 0.6em; 
@@ -145,7 +144,8 @@
 		text-align: right;
 	}
 
-	table#main td:first-child {
+	table#main td:first-child,
+	table#main td.href {
 		text-align:left;
 	}
 	
@@ -329,7 +329,9 @@ CApp.prototype = {
 		row.insertCell(4);	
 		row.insertCell(5);
 		row.insertCell(6).innerHTML = '<input class="comment" type="text" placeholder="comment" size="20"/>';
-		row.insertCell(7).innerHTML = '<input class="comment" type="text" placeholder="comment" size="20"/><a href="" target="_blank" style="display:none;">трек</a><span style="display:none;">e</span>';
+		td = row.insertCell(7);
+		td.innerHTML = '<input type="text" placeholder="track link" size="20"/><a href="" target="_blank" style="display:none;">трек</a><span style="display:none; text-decoration: underline; margin-left:0.5em;">&#x1F58A</span>';
+		td.className = 'href';
 		
 		td = row.insertCell(8);
 		td.innerHTML = '<button class="btn btn-ok hover">x2</button> <button class="icon-btn btn-err hover">&times;</button>'; // 
