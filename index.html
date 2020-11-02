@@ -137,7 +137,8 @@
 		padding-right: 1em;
 	}	
 	
-	table#main td {
+	table#main td,
+	table#main th.select {
 		padding: .3em .3em ;
 		min-width: 3em;
 		text-align: right;
@@ -181,10 +182,10 @@
 	</style>
 </head>
 <body>	
-	<h3>PaceKeeper</h3><br/>
+	<h3>PaceKeeper</h3>
 	<table id="main" zborder="1">
 		<thead><tr>
-		<th></th><th></th>
+		<th></th><th class="select"><select multiple size="3" id="filter" style="border: rgba(227, 227,227, 0.7) 1px inset;"><option value="2">Бег</option><option value="3">Вело</option><option value="4">Лыжи</option></select></th>
 		<th>расстояние<br><span class="unit">м</span></th>
 		<th>время<br><span class="unit">&nbsp;</span></th>
 		<th>темп<br><span class="unit">мин/км</span></th><th>скорость<br><span class="unit">км/ч</span></th>
@@ -285,6 +286,7 @@ CApp.prototype = {
 		
 		this._on(get('addRow'), 'click', e => {this._prependRow(new CData()); this._save();});
 		this._on(get('exp'), 'click', e => this._onExport(e));
+		this._on(get('filter'), 'change', e => this._render());
 		
 		this._load();
 		if (this._data.length == 0)
@@ -317,7 +319,16 @@ CApp.prototype = {
 			return;
 			
 		this._body.innerHTML = '';
-		this._data.forEach((d, idx) => this._updateRow(this._addRow(idx), d));
+		
+		var cn = 0;
+		var filter = {};
+		var opts = get('filter').options;
+		for (var i = opts.length -1; i >= 0; i--)
+			if (opts[i].selected) {
+				cn++;
+				filter[opts[i].value] = 1;
+			}
+		this._data.forEach((d, idx) => {if (cn == 0 || filter[d.type]) this._updateRow(this._addRow(idx), d)});
 	},
 	
 	_addRow: function(index) {
@@ -325,7 +336,12 @@ CApp.prototype = {
 			index = 0; //this._body.rows.length;
 		
 		var td;
-		var row = this._body.insertRow(index);
+		var row = this._body.insertRow(index ? this._body.rows.length : 0);
+		row.dataset.idx = index || 0;
+		
+		if (index == 0)
+			for (var j = this._body.rows.length -1; j > 0; j--)
+				this._body.rows[j].dataset.idx++;			
 	
 	    row.insertCell(0).innerHTML = '<input type="date"/>';
 		td = row.insertCell(1);
@@ -390,9 +406,8 @@ CApp.prototype = {
 	
 	_onInputChanged: function(e) {
 		var row = e.target.parentNode.parentNode;
-		var idx = row.sectionRowIndex;
 		
-		var data = this._data[idx];
+		var data = this._data[row.dataset.idx];
 		var type = e.target.getAttribute('data-type');
 		var res = data.setStrVal(e.target.value, type);
 		
@@ -414,7 +429,7 @@ CApp.prototype = {
 			return;
 		
 		var row = e.target.parentNode.parentNode;
-		this._data[row.sectionRowIndex][field] = e.target.value;
+		this._data[row.dataset.idx][field] = e.target.value;
 		this._save();	
 	},
 
@@ -456,7 +471,7 @@ CApp.prototype = {
 		if (!e.shiftKey && !confirm('удалить строку?'))
 			return;
 			
-		var idx = e.target.parentNode.parentNode.sectionRowIndex;
+		var idx = e.target.parentNode.parentNode.dataset.idx;
 		this._body.deleteRow(idx);
 		this._data.splice(idx, 1);		
 		
@@ -468,7 +483,7 @@ CApp.prototype = {
 	
 	_onCopyRow: function(e) {
 		var row = e.target.parentNode.parentNode;		
-		this._prependRow(new CData(this._data[row.sectionRowIndex]));
+		this._prependRow(new CData(this._data[row.dataset.idx]));
 		this._save();
 	},
 	
