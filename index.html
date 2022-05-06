@@ -345,7 +345,7 @@ CApp.prototype = {
 	
 	    row.insertCell(0).innerHTML = '<input type="date"/>';
 		td = row.insertCell(1);
-		td.innerHTML = '<select><option value="2">Бег</option><option value="3">Вело</option><option value="4">Лыжи</option></select>'; // <option value=""></option>
+		td.innerHTML = '<select><option value="2">Бег</option><option value="3">Вело</option><option value="1">Пешком</option><option value="4">Лыжи</option></select>'; // <option value=""></option>
 		this._on(td.querySelector('select'), 'change', (e) => this._onDataFieldChanged(e, 'type'));
 
 		row.insertCell(2).innerHTML = '<input type="text" maxlength="7" placeholder="42 195" data-type="dist"/>';	
