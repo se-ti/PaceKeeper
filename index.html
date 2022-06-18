@@ -382,7 +382,7 @@ CApp.prototype = {
 			
 		var inputs = row.querySelectorAll('input');
 		this._setNotEmpty(inputs[0], data.date);
-		row.cells[1].querySelector('select').value = data.type || CData.types.Ski;
+		row.cells[1].querySelector('select').value = data.type || CData.types.Ski.v;
 		this._setNotEmpty(inputs[1], data.getDistance());
 		this._setNotEmpty(inputs[2], data.getTime());
 		row.cells[4].innerHTML = data.getPace();
@@ -489,10 +489,10 @@ CApp.prototype = {
 	
 	_onExport: function(e) {
 		var dataStr = this._data.filter(d => d.isReady())
-			.map(d => `${d.getDistance()};${d.getTime()};${d.getPace(true)};${('' + d.getSpeed()).replace(/\./mg, ',')};${this._csvEscape(d.comment || '')}`)
+			.map(d => `${this._csvEscape(d.date)};{this._csvEscape(d.getTypeCaption())};${d.getDistance()};${d.getTime()};${d.getPace(true)};${('' + d.getSpeed()).replace(/\./mg, ',')};${this._csvEscape(d.comment || '')}`)
 			.join('%0D%0A');
 			
-		e.target.href = 'data:text/csv;charset=utf-8,%EF%BB%BFдистанция;время;темп;скорость;комментарий%0D%0A' + dataStr;
+		e.target.href = 'data:text/csv;charset=utf-8,%EF%BB%BFдата;тип;дистанция;время;темп;скорость;комментарий%0D%0A' + dataStr;
 	},
 	
 	_csvEscape: function(str) {
@@ -508,7 +508,7 @@ CApp.prototype = {
 	_on: function(elem, event, handler) {
 		if (elem && handler && (event || '') != '')
 			elem.addEventListener(event, handler, false);
-	},
+	}
 };
 
 var CData = function(src) {
@@ -516,7 +516,7 @@ var CData = function(src) {
 	this.seconds = src ? src.seconds : null;
 	this.pace = src ? src.pace : null;		// sec per km
 	this.speed = src ? src.speed : null;	// meters per sec
-	this.type = src ? src.type : CData.types.Run;
+	this.type = src ? src.type : CData.types.Run.v;
 	this.comment = (src ? src.comment : '') || '';
 	this.trackHref = (src ? src.trackHref : '') || '';
 	
@@ -539,12 +539,12 @@ var CData = function(src) {
 
 
 CData.types = {
-	Undef: 0,
-	Walk: 1,
-	Run: 2,
-	Bike: 3,
-	Ski: 4,
-	Auto: 5
+	Undef: {v: 0, cap: 'неизв'},
+	Walk: {v: 1, cap: 'Пешком'},
+	Run: {v: 2, cap: 'Бег'},
+	Bike: {v: 3, cap: 'Вело'},
+	Ski: {v: 4, cap: 'Лыжи'},
+	Auto: {v: 5, cap: 'Авто'}
 };
 
 CData._parseFloat = function (str) {
@@ -633,6 +633,13 @@ CData.prototype = {
 			return '';
 			
 		return Math.round(this.speed/10.0 * 3600) / 100; 
+	},
+	
+	getTypeCaption: function() {
+		for (var i in CData.types)
+			if (i != null && CData.types[i] != null && CData.types[i].v == this.type)
+				return CData.types[i].cap;
+		return CData.types.Undef.cap;
 	},
 	
 	_secToHMS: function(sec) {
