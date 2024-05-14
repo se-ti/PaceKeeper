@@ -621,7 +621,11 @@ CData.prototype = {
 		if (!this.isReady() || !Number.isFinite(this.pace))
 			return '';
 			
-		return this._secToHMS(this.pace, useHours);
+		if (useHours)
+			return this._secToHMS(this.pace, true);
+
+		var sec = Math.round(this.pace);		
+		return Math.trunc(sec / 60) + ':' + padLeft(sec % 60, 2, '0');
 	},
 	
 	getSpeed: function() {
