@@ -613,19 +613,15 @@ CData.prototype = {
 		return Number.isFinite(this.distance) ? formatInt(this.distance) : ''; 
 	},
 
-	getTime: function() {
-		return Number.isFinite(this.seconds) ? this._secToHMS(this.seconds) : '';
+	getTime: function(useHours) {
+		return Number.isFinite(this.seconds) ? this._secToHMS(this.seconds, useHours) : '';
 	},
 	
 	getPace: function(useHours) {
 		if (!this.isReady() || !Number.isFinite(this.pace))
 			return '';
 			
-		if (useHours)
-			return this._secToHMS(this.pace);
-
-		var sec = Math.round(this.pace);		
-		return Math.trunc(sec / 60) + ':' + padLeft(sec % 60, 2, '0');
+		return this._secToHMS(this.pace, useHours);
 	},
 	
 	getSpeed: function() {
@@ -642,9 +638,12 @@ CData.prototype = {
 		return CData.types.Undef.cap;
 	},
 	
-	_secToHMS: function(sec) {
+	_secToHMS: function(sec, forceHours) {
 		sec = Math.round(sec);
-		return `${Math.trunc(sec/3600)}:${padLeft(Math.trunc(sec/60)%60 , 2, '0')}:${padLeft(sec%60, 2, '0')}`;
+		const needHours = forceHours || Math.trunc(sec/3600) > 0;
+		const hours = needHours ? `${Math.trunc(sec/3600)}:` : '';
+		const minutes = Math.trunc(sec/60) % 60;
+		return `${hours}${needHours ? padLeft(minutes, 2, '0') : minutes}:${padLeft(sec % 60, 2, '0')}`;
 	}
 };
 
