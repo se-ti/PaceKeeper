@@ -341,7 +341,7 @@ CApp.prototype = {
 		
 		if (index == 0)
 			for (var j = this._body.rows.length -1; j > 0; j--)
-				this._body.rows[j].dataset.idx++;			
+				this._body.rows[j].dataset.idx++;
 	
 	    row.insertCell(0).innerHTML = '<input type="date"/>';
 		td = row.insertCell(1);
@@ -473,7 +473,9 @@ CApp.prototype = {
 			
 		var idx = e.target.parentNode.parentNode.dataset.idx;
 		this._body.deleteRow(idx);
-		this._data.splice(idx, 1);		
+		this._data.splice(idx, 1);
+		for (var j = this._body.rows.length -1; j >= idx; j--)
+			this._body.rows[j].dataset.idx--;
 		
 		if (this._body.rows.length == 0)
 			this._prependRow(new CData());
