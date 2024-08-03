@@ -491,7 +491,7 @@ CApp.prototype = {
 	
 	_onExport: function(e) {
 		var dataStr = this._data.filter(d => d.isReady())
-			.map(d => `${this._csvEscape(d.date)};${this._csvEscape(d.getTypeCaption())};${d.getDistance()};${d.getTime()};${d.getPace(true)};${('' + d.getSpeed()).replace(/\./mg, ',')};${this._csvEscape(d.comment || '')}`)
+			.map(d => `${this._csvEscape(d.date)};${this._csvEscape(d.getTypeCaption())};${d.getDistance()};${d.getTime()};${d.getPace(true)};${('' + d.getSpeed()).replace(/\./mg, ',')};${this._csvEscape(d.comment || '')};${d.trackHref}`)
 			.join('%0D%0A');
 			
 		e.target.href = 'data:text/csv;charset=utf-8,%EF%BB%BFдата;тип;дистанция;время;темп;скорость;комментарий%0D%0A' + dataStr;
