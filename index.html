@@ -304,7 +304,8 @@ CApp.prototype = {
 		}
 		raw = (raw || '') != '' ? JSON.parse(raw) : [];
 		
-		this._data = raw.map(item => new CData(item));
+		this._data = raw.map(item => new CData(item))
+			.sort(function(d1, d2) { return (new Date(d1.date)) - (new Date(d2.date))});
 	},
 	
 	_save: function() {
