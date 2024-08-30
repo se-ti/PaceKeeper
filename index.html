@@ -361,7 +361,7 @@ CApp.prototype = {
 		td.innerHTML = '<input type="text" placeholder="track url" size="20"/><a href="" target="_blank" style="display:none;">трек</a><span style="display:none;" class="hover edit">&#x1F58A</span>';
 		td.className = 'href';
 		
-		td = row.insertCell(8);
+		td = row.insertCell(9);
 		td.innerHTML = '<button class="btn btn-ok hover">x2</button> <button class="icon-btn btn-err hover">&times;</button>'; // 
 		this._on(td.querySelector('button.btn-err'), 'click', this._d_onDelRow);
 		this._on(td.querySelector('button.btn-ok'), 'click', this._d_onCopyRow);
@@ -497,11 +497,11 @@ CApp.prototype = {
 	
 	_onExport: function(e) {
 		var dataStr = this._data.filter(d => d.isReady())
-			.map(d => `${this._csvEscape(d.date)};${this._csvEscape(d.getTypeCaption())};${d.getDistance()};${d.getTime()};${d.getPace(true)};${('' + d.getSpeed()).replace(/\./mg, ',')};${this._csvEscape(d.comment || '')};${encodeURIComponent(d.trackHref || '')}`)
+			.map(d => `${this._csvEscape(d.date)};${this._csvEscape(d.getTypeCaption())};${d.getDistance()};${d.getTime()};${d.getPace(true)};${('' + d.getSpeed()).replace(/\./mg, ',')};${this._csvEscape(d.elevation || '')};${this._csvEscape(d.comment || '')};${encodeURIComponent(d.trackHref || '')}`)
 			.join('%0D%0A');
 
 		e.target.download = `paceKeeper.${(new Date()).toLocaleDateString().replace(/[\\\/\-\s]+/gm, '.')}.csv`;
-		e.target.href = 'data:text/csv;charset=utf-8,%EF%BB%BFдата;тип;дистанция;время;темп;скорость;комментарий%0D%0A' + dataStr;
+		e.target.href = 'data:text/csv;charset=utf-8,%EF%BB%BFдата;тип;дистанция;время;темп;скорость;набор;комментарий%0D%0A' + dataStr;
 	},
 	
 	_csvEscape: function(str) {
