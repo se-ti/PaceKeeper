@@ -188,7 +188,9 @@
 		<th></th><th class="select"><select multiple size="3" id="filter" style="border: rgba(227, 227,227, 0.7) 1px inset;"><option value="2">Бег</option><option value="3">Вело</option><option value="1">Пешком</option><option value="4">Лыжи</option></select></th>
 		<th>расстояние<br><span class="unit">м</span></th>
 		<th>время<br><span class="unit">&nbsp;</span></th>
-		<th>темп<br><span class="unit">мин/км</span></th><th>скорость<br><span class="unit">км/ч</span></th>
+		<th>темп<br><span class="unit">мин/км</span></th>
+		<th>скорость<br><span class="unit">км/ч</span></th>
+		<th>набор<br><span class="unit">м</span></th>
 		<th>комментарий<br><span class="unit">&nbsp;</span></th>
 		<th>трек<br><span class="unit">&nbsp;</span></th>
 		
@@ -353,8 +355,9 @@ CApp.prototype = {
 		row.insertCell(3).innerHTML = '<input type="text" placeholder="2:01:38" maxlength="9" data-type="time"/>';
 		row.insertCell(4);	
 		row.insertCell(5);
-		row.insertCell(6).innerHTML = '<input class="comment" type="text" placeholder="comment" size="20"/>';
-		td = row.insertCell(7);
+		row.insertCell(6).innerHTML = '<input type="text" placeholder="elevation" maxlength="4"/>';
+		row.insertCell(7).innerHTML = '<input class="comment" type="text" placeholder="comment" size="25"/>';
+		td = row.insertCell(8);
 		td.innerHTML = '<input type="text" placeholder="track url" size="20"/><a href="" target="_blank" style="display:none;">трек</a><span style="display:none;" class="hover edit">&#x1F58A</span>';
 		td.className = 'href';
 		
@@ -371,9 +374,10 @@ CApp.prototype = {
 		this._on(inputs[2], 'change', this._d_onInputChanged);
 		this._on(inputs[2], 'paste', this._d_delayedChange)
 		this._on(inputs[2], 'cut', this._d_delayedChange)
-		this._on(inputs[3], 'change', (e) => this._onDataFieldChanged(e, 'comment'));
-		this._on(inputs[4], 'change', (e) => {this._onDataFieldChanged(e, 'trackHref'); this._setupTrackField(row.cells[7], this._data[index].trackHref);});
-		this._on(row.cells[7].querySelector('span'), 'click', e => this._setupTrackField(row.cells[7], null, true));
+		this._on(inputs[3], 'change', (e) => this._onDataFieldChanged(e, 'elevation'));
+		this._on(inputs[4], 'change', (e) => this._onDataFieldChanged(e, 'comment'));
+		this._on(inputs[5], 'change', (e) => {this._onDataFieldChanged(e, 'trackHref'); this._setupTrackField(row.cells[8], this._data[index].trackHref);});
+		this._on(row.cells[8].querySelector('span'), 'click', e => this._setupTrackField(row.cells[8], null, true));
 		return row;
 	},
 		
@@ -523,6 +527,7 @@ var CData = function(src) {
 	this.type = src ? src.type : CData.types.Run.v;
 	this.comment = (src ? src.comment : '') || '';
 	this.trackHref = (src ? src.trackHref : '') || '';
+	this.elevation = (src ? src.elevation : '') || '';
 	
 	this.date = null;
 	if (src && src.date)
