@@ -8,8 +8,70 @@
 	body { 
 		font-family: sans-serif; 
 		font-size: 16px;
-		margin: 1em 2em; 
+		margin: 0;		
 	}
+	
+	.container {
+		display: flex;
+		flex-direction: row;
+	}
+
+	.content {
+		padding: 1em 2em; 
+		overflow-y: auto;		
+		flex-grow: 0;
+	}
+	
+	.map {
+		background-color:  #efe;
+		flex-grow: 1;
+		border-left: 1px solid #bbb;
+	}
+	
+	.map > div {
+		position:sticky;
+		top:0;
+	}
+	
+	.map.wide > div > div { 
+		position: relative; 
+	}
+
+	.map.wide > div {		
+		min-width: 70vw;
+		box-shadow: -3px 0 6px  rgba(135, 135, 135, .6);
+	}
+
+	.map .btn-wrap { 
+		position: relative; 
+	}
+
+	.map .map-wide  { 
+		width: 2em;
+		height: 2em;
+		/*border-width: 1px;
+		border-radius: 4px 0 0 4px;*/
+		position: absolute;
+		right: 100%;
+		top: 0;
+		margin: 0 0 1ex 1ex;
+	}
+
+	.map iframe {
+		display: block;
+		margin:0;
+		border: 0;
+		height: 100vh;
+		width: 100%;
+	}	
+	
+	@media (width <= 480px) {
+		.map {
+			display: none;
+		}
+	}
+	</style>
+	<style>
 		
 	input, button {
 		padding: 0.4em 0.6em; 
@@ -160,6 +222,7 @@
 		text-align: left;
 		padding-right: 0;
 		padding-left: .3em; 
+		white-space: nowrap;
 	}
 	
 	table#main td:nth-child(5) {
@@ -177,35 +240,47 @@
 	.edit {
 		cursor: pointer;
 		margin-left: 0.5em;
-	}
-		
+	}		
 	</style>
 </head>
-<body>	
-	<h3>PaceKeeper</h3>
-	<table id="main" zborder="1">
-		<thead><tr>
-		<th></th><th class="select"><select multiple size="3" id="filter" style="border: rgba(227, 227,227, 0.7) 1px inset;"><option value="2">Бег</option><option value="3">Вело</option><option value="1">Пешком</option><option value="4">Лыжи</option></select></th>
-		<th>расстояние<br><span class="unit">м</span></th>
-		<th>время<br><span class="unit">&nbsp;</span></th>
-		<th>темп<br><span class="unit">мин/км</span></th>
-		<th>скорость<br><span class="unit">км/ч</span></th>
-		<th>набор<br><span class="unit">м</span></th>
-		<th>комментарий<br><span class="unit">&nbsp;</span></th>
-		<th>трек<br><span class="unit">&nbsp;</span></th>
+<body>		
+	<div class="container">
+		<div class="content">
+			<h3>PaceKeeper</h3>
+			<table id="main" zborder="1">
+				<thead><tr>
+				<th></th><th class="select"><select multiple size="3" id="filter" style="border: rgba(227, 227,227, 0.7) 1px inset;"><option value="2">Бег</option><option value="3">Вело</option><option value="1">Пешком</option><option value="4">Лыжи</option></select></th>
+				<th>расстояние<br><span class="unit">м</span></th>
+				<th>время<br><span class="unit">&nbsp;</span></th>
+				<th>темп<br><span class="unit">мин/км</span></th>
+				<th>скорость<br><span class="unit">км/ч</span></th>
+				<th>набор<br><span class="unit">м</span></th>
+				<th>комментарий<br><span class="unit">&nbsp;</span></th>
+				<th>трек<br><span class="unit">&nbsp;</span></th>
+				
+				<th><button id="addRow" class="icon-btn btn-ok">+</button> <a id="exp" href="" download class="th-link">Экспорт</a></th></tr></thead>
+				<tbody></tbody>
+			</table>
+		</div>
 		
-		<th><button id="addRow" class="icon-btn btn-ok">+</button> <a id="exp" href="" download class="th-link">Экспорт</a> <a href="https://nakarte.me/" class="th-link" target="_blank">nakarte</a></th></tr></thead>
-		<tbody></tbody>
-	</table>
+		<div class="map -wide">
+			<div>
+				<div>
+					<div class="btn-wrap"><button class="map-wide" action="button">&laquo;</button></div>
+					<iframe src="https://nakarte.me/"></iframe>
+				</div>
+			</div>
+		</div>
+	</div>
 	
 	
-	<ul>
+	<!-- ul -->
 	
 	<!--li>экспорт -- корректное время темпа ???, кнопочка</li>
 	<li>??? сортировки-фильтры?</li>
 	<li>хранить все в строках?</li-->
 	<!-- <li></li> -->
-	</ul>
+	<!-- /ul -->
 <script>
 "use strict";
 function get(id) {
@@ -286,9 +361,10 @@ CApp.prototype = {
 	init: function() {	
 		this._body = document.querySelector('#main tbody');
 		
-		this._on(get('addRow'), 'click', e => {this._prependRow(new CData()); this._save();});
+		this._on(get('addRow'), 'click', e => { this._prependRow(new CData()); this._save(); });
 		this._on(get('exp'), 'click', e => this._onExport(e));
 		this._on(get('filter'), 'change', e => this._render());
+		this._on(document.querySelector('.map-wide'), 'click', e => { const el = document.querySelector('.map'); const has = el.classList.contains('wide'); el.classList.toggle('wide', !has); e.target.innerHTML = has ? '&laquo;' : '&raquo;'; });
 		
 		this._load();
 		if (this._data.length == 0)
@@ -378,6 +454,7 @@ CApp.prototype = {
 		this._on(inputs[4], 'change', (e) => this._onDataFieldChanged(e, 'comment'));
 		this._on(inputs[5], 'change', (e) => {this._onDataFieldChanged(e, 'trackHref'); this._setupTrackField(row.cells[8], this._data[index].trackHref);});
 		this._on(row.cells[8].querySelector('span'), 'click', e => this._setupTrackField(row.cells[8], null, true));
+		this._on(row.cells[8].querySelector('a'), 'click', e => this._openUrl(e));
 		return row;
 	},
 		
@@ -514,8 +591,21 @@ CApp.prototype = {
 		return '"' + str.replace('"', '""') + '"';
 	},
 	
+	_openUrl: function(e) {		
+		if (e.ctrlKey || e.altKey || e.shiftKey || !/https:\/\/nakarte.me\//i.test(e.target.href || '') || window.matchMedia && window.matchMedia("(width <= 480px)").matches)
+			return;
+			
+		const ifr = document.querySelector('iframe');
+		if (ifr) {
+			ifr.src = e.target.href;			
+			e.preventDefault();
+		}
+			
+		console.log(e);
+	},
+	
 	_on: function(elem, event, handler) {
-		if (elem && handler && (event || '') != '')
+		if (elem && handler && (event || '') != '' && elem.addEventListener)
 			elem.addEventListener(event, handler, false);
 	}
 };
