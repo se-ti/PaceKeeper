@@ -823,7 +823,7 @@ CData.fromCSVRow = function(row) {
 		}	
 	});
 
-	colIndex += 2; // skip pace and speed
+	colIdx += 2; // skip pace and speed
 
 	if ((row[colIdx] || '') != '') {
 		data.elevation = String(row[colIdx]).trim();
