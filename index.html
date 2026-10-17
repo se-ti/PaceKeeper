@@ -355,6 +355,60 @@ var CApp = function() {
 	this._d_delayedChange = $cd(this, this._delayedChange);
 };
 
+// Парсер TSV/CSV (соответствует RFC 4180)
+// Параметризовать разделители ячеек и escape-символ	
+CApp.parseExcelClipboard = function(text) {
+	const rows = [];
+	let currentRow = [];
+	let currentCell = '';
+	let inQuotes = false;
+
+	for (let i = 0; i < text.length; i++) {
+		const char = text[i];
+		const nextChar = text[i + 1];
+
+		if (inQuotes) {
+			if (char === '"') {
+				if (nextChar === '"') {
+					currentCell += '"';
+					i++;
+				} else
+					inQuotes = false;
+			} else
+				currentCell += char;
+		} else {
+			if (char === '"')
+				inQuotes = true;
+			else if (char === '\t') {
+				currentRow.push(currentCell.trim());
+				currentCell = '';
+			} else if (char === '\r' && nextChar === '\n') {
+				currentRow.push(currentCell.trim());
+				if (currentRow.some(cell => cell !== ''))
+					rows.push(currentRow);
+				currentRow = [];
+				currentCell = '';
+				i++;
+			} else if (char === '\n' || char === '\r') {
+				currentRow.push(currentCell.trim());
+				if (currentRow.some(cell => cell !== ''))
+					rows.push(currentRow);
+				currentRow = [];
+				currentCell = '';
+			} else
+				currentCell += char;
+		}
+	}
+
+	if (currentCell !== '' || currentRow.length > 0) {
+		currentRow.push(currentCell.trim());
+		if (currentRow.some(cell => cell !== ''))
+			rows.push(currentRow);
+	}
+
+	return rows;
+}	
+
 CApp.prototype = {
 
 	_key: "paces",
@@ -366,6 +420,7 @@ CApp.prototype = {
 		this._on(get('exp'), 'click', e => this._onExport(e));
 		this._on(get('filter'), 'change', e => this._render());
 		this._on(document.querySelector('.map-wide'), 'click', e => { const el = document.querySelector('.map'); const has = el.classList.contains('wide'); el.classList.toggle('wide', !has); e.target.innerHTML = has ? '&laquo;' : '&raquo;'; });
+		this._on(document.body, 'paste', e => this._onPaste(e));
 		
 		this._load();
 		if (this._data.length == 0)
@@ -604,6 +659,41 @@ CApp.prototype = {
 			
 		console.log(e);
 	},
+
+	_onPaste: function(e) {
+		const activeEl = document.activeElement;
+		if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable))
+			return;
+	
+		const clipboardData = e.clipboardData || window.clipboardData;
+		if (!clipboardData)
+			return;
+	
+		const pastedText = clipboardData.getData('text/plain');
+		if (!pastedText)
+			return;
+	
+		const parsedRows = parseExcelClipboard(pastedText);
+		if (parsedRows.length === 0)
+			return;
+	
+		let addedCount = 0;
+	
+		parsedRows.forEach(row => {
+			const res = CData.fromCSVRow(row);
+			if (res.data) {
+				this._data.push(res.data);
+				addedCount++;
+			} else if (res.err)
+				console.warn('Ошибка импорта строки:', res.err, row);
+		});
+	
+		if (addedCount > 0) {
+			this._save();
+			this._render();
+			e.preventDefault();
+		}
+	},
 	
 	_on: function(elem, event, handler) {
 		if (elem && handler && (event || '') != '' && elem.addEventListener)
@@ -665,6 +755,76 @@ CData._parseTime = function(str) {
 		val: isNaN(sec) ? null : sec,
 		err: isNaN(sec) ? `некорректное время: '${str}'` : null
 	};	
+};
+
+CData._parseType = function(val) {
+	if (val == null || val === '')
+		return CData.types.Run.v;
+
+	const v = val.toString().toLowerCase().trim();
+
+	for (var key in CData.types) {
+		const item = CData.types[key];
+		if (!item || item.v === 0)
+			continue;
+
+		const cap = (item.cap || '').toLowerCase();
+		if (v.includes(cap) || cap.includes(v))
+			return item.v;
+	}
+
+	return CData.types.Run.v;
+};
+
+CData.fromCSVRow = function(row) {
+	if (!row || row.length < 3)
+		return { data: null, err: 'Строка должна содержать минимум 3 колонки' };
+
+	const data = new CData();
+	let colIdx = 0;
+	const errors = [];
+
+	if (row[colIdx] && /^\d{4}-\d{2}-\d{2}$/.test(row[colIdx])) {
+		data.date = row[colIdx];
+		colIdx++;
+	}
+
+	if (row[colIdx] && isNaN(+row[colIdx].replace(/\s/g, ''))) {
+		data.type = CData._parseType(row[colIdx]);
+		colIdx++;
+	}
+
+	if ((row[colIdx] || '') != '') {
+		const res = data.setStrVal(row[colIdx], 'dist');
+		if (res.err)
+			errors.push(res.err);
+		colIdx++;
+	}
+
+	if ((row[colIdx] || '') != '') {
+		const res = data.setStrVal(row[colIdx], 'time');
+		if (res.err)
+			errors.push(res.err);
+		colIdx++;
+	}
+
+	if ((row[colIdx] || '') != '') {
+		data.elevation = String(row[colIdx]).trim();
+		colIdx++;
+	}
+
+	if ((row[colIdx] || '') != '') {
+		data.comment = String(row[colIdx]);
+		colIdx++;
+	}
+
+	if ((row[colIdx] || '') != '')
+		data.trackHref = String(row[colIdx]);
+
+	if (errors.length > 0)
+		return { data: null, err: errors.join('; ') };
+
+	return { data: data, err: null };
 };
 
 
