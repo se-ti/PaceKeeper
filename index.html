@@ -680,7 +680,6 @@ CApp.prototype = {
 			return;
 	
 		let addedCount = 0;
-	
 		parsedRows.forEach(row => {
 			const res = CData.fromCSVRow(row);
 			if (res.data) {
@@ -740,6 +739,22 @@ CData.types = {
 	Auto: {v: 5, cap: 'Авто'}
 };
 
+CData._parseDate = function (str) {
+	var s = (str || '').trim();
+	var match = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+	if (match)
+		return { res: `${match[1]}-${padLeft(match[2], 2, '0')}-${padLeft(match[3], 2, '0')}`, err: null };
+
+	match = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+	if (match)
+		return { res: `${match[3]}-${padLeft(match[2], 2, '0')}-${padLeft(match[1], 2, '0')}`, err: null };
+
+	return {
+		res: null,
+		err: `некорректная дата: '${str}'`
+	};
+};
+	
 CData._parseFloat = function (str) {
 	var d = +((str || '').replace(/\s+/mg, ''));
 	return {
@@ -786,31 +801,14 @@ CData.fromCSVRow = function(row) {
 	let colIdx = 0;
 	const errors = [];
 
-	if (row[colIdx] && /^\d{4}-\d{2}-\d{2}$/.test(row[colIdx])) {
-		data.date = row[colIdx];
-		colIdx++;
-	}
-
-	if ((row[colIdx] || '') != '') {
-		data.type = data.setStrVal(row[colIdx], 'type');
-		if (res.err)
-			errors.push(res.err);
-		colIdx++;
-	}
-
-	if ((row[colIdx] || '') != '') {
-		const res = data.setStrVal(row[colIdx], 'dist');
-		if (res.err)
-			errors.push(res.err);
-		colIdx++;
-	}
-
-	if ((row[colIdx] || '') != '') {
-		const res = data.setStrVal(row[colIdx], 'time');
-		if (res.err)
-			errors.push(res.err);
-		colIdx++;
-	}
+	['date', 'type', 'dist', 'time'].forEach(fld => {
+		if ((row[colIdx] || '') != '') {
+			const res = data.setStrVal(row[colIdx], fld);
+			if (res.err)
+				errors.push(res.err);
+			colIdx++;
+		}	
+	});
 
 	if ((row[colIdx] || '') != '') {
 		data.elevation = String(row[colIdx]).trim();
@@ -834,6 +832,7 @@ CData.fromCSVRow = function(row) {
 
 CData.prototype = {
 	_mappers: {	
+		'date' : {field: 'type', parser: CData._parseDate },
 		'type' : {field: 'type', parser: CData._parseType },
 		'dist' : {field: 'distance', parser: CData._parseFloat },
 		'time' : {field: 'seconds', parser: CData._parseTime },
