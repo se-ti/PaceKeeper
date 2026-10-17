@@ -356,7 +356,7 @@ var CApp = function() {
 };
 
 // Парсер TSV/CSV (соответствует RFC 4180)
-// Параметризовать разделители ячеек и escape-символ	
+// todo: Параметризовать escape-символ	
 CApp.parseExcelClipboard = function(text, sep) {	
 	const rows = [];
 	let currentRow = [];
@@ -756,14 +756,14 @@ CData._parseDate = function (str) {
 	var s = (str || '').trim();
 	var match = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
 	if (match)
-		return { res: `${match[1]}-${padLeft(match[2], 2, '0')}-${padLeft(match[3], 2, '0')}`, err: null };
+		return { val: `${match[1]}-${padLeft(match[2], 2, '0')}-${padLeft(match[3], 2, '0')}`, err: null };
 
 	match = s.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
 	if (match)
-		return { res: `${match[3]}-${padLeft(match[2], 2, '0')}-${padLeft(match[1], 2, '0')}`, err: null };
+		return { val: `${match[3]}-${padLeft(match[2], 2, '0')}-${padLeft(match[1], 2, '0')}`, err: null };
 
 	return {
-		res: null,
+		val: null,
 		err: `некорректная дата: '${str}'`
 	};
 };
@@ -825,15 +825,8 @@ CData.fromCSVRow = function(row) {
 
 	colIdx += 2; // skip pace and speed
 
-	if ((row[colIdx] || '') != '') {
-		data.elevation = String(row[colIdx]).trim();
-		colIdx++;
-	}
-
-	if ((row[colIdx] || '') != '') {
-		data.comment = String(row[colIdx]);
-		colIdx++;
-	}
+	data.elevation = String(row[colIdx++] || '').trim();
+	data.comment = String(row[colIdx++] || '').trim();
 
 	if ((row[colIdx] || '') != '')
 		data.trackHref = String(row[colIdx]);
