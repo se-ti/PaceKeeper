@@ -357,11 +357,13 @@ var CApp = function() {
 
 // Парсер TSV/CSV (соответствует RFC 4180)
 // Параметризовать разделители ячеек и escape-символ	
-CApp.parseExcelClipboard = function(text) {
+CApp.parseExcelClipboard = function(text, sep) {	
 	const rows = [];
 	let currentRow = [];
 	let currentCell = '';
 	let inQuotes = false;
+
+	sep = sep || '\t';
 
 	for (let i = 0; i < text.length; i++) {
 		const char = text[i];
@@ -379,7 +381,7 @@ CApp.parseExcelClipboard = function(text) {
 		} else {
 			if (char === '"')
 				inQuotes = true;
-			else if (char === '\t') {
+			else if (char === sep) {
 				currentRow.push(currentCell.trim());
 				currentCell = '';
 			} else if (char === '\r' && nextChar === '\n') {
@@ -789,8 +791,10 @@ CData.fromCSVRow = function(row) {
 		colIdx++;
 	}
 
-	if (row[colIdx] && isNaN(+row[colIdx].replace(/\s/g, ''))) {
-		data.type = CData._parseType(row[colIdx]);
+	if ((row[colIdx] || '') != '') {
+		data.type = data.setStrVal(row[colIdx], 'type');
+		if (res.err)
+			errors.push(res.err);
 		colIdx++;
 	}
 
@@ -829,7 +833,9 @@ CData.fromCSVRow = function(row) {
 
 
 CData.prototype = {
-	_mappers: {	'dist' : {field: 'distance', parser: CData._parseFloat },
+	_mappers: {	
+		'type' : {field: 'type', parser: CData._parseType },
+		'dist' : {field: 'distance', parser: CData._parseFloat },
 		'time' : {field: 'seconds', parser: CData._parseTime },
 		'pace' : {field: 'pace', parser: CData._parseTime },
 		'speed' : {field: 'speed', parser: CData._parseFloat }
