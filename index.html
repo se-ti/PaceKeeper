@@ -761,7 +761,7 @@ CData._parseTime = function(str) {
 
 CData._parseType = function(val) {
 	if (val == null || val === '')
-		return CData.types.Run.v;
+		return {res: CData.types.Run.v, err: null };
 
 	const v = val.toString().toLowerCase().trim();
 
@@ -772,10 +772,10 @@ CData._parseType = function(val) {
 
 		const cap = (item.cap || '').toLowerCase();
 		if (v.includes(cap) || cap.includes(v))
-			return item.v;
+			return { res: item.v, err: null };
 	}
 
-	return CData.types.Run.v;
+	return {res: CData.types.Run.v, err: null };
 };
 
 CData.fromCSVRow = function(row) {
