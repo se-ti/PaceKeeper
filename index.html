@@ -673,7 +673,7 @@ CApp.prototype = {
 		if (!pastedText)
 			return;
 	
-		const parsedRows = parseExcelClipboard(pastedText);
+		const parsedRows = CApp.parseExcelClipboard(pastedText);
 		if (parsedRows.length === 0)
 			return;
 	
