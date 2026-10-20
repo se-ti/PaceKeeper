@@ -679,28 +679,56 @@ CApp.prototype = {
 		if (parsedRows.length === 0)
 			return;
 
-		var totCells = parsedRows.reduce((agg, row) => {return agg + row?.length || 0}, 0);
-		if (totCells < 2 * parsedRows.length)	// а может это не эксель, а csv
+		const totCells = parsedRows.reduce((agg, row) => {return agg + row?.length || 0}, 0);
+		if (totCells < 2 * parsedRows.length)	// может это не Excel, а CSV?
 			parsedRows = CApp.parseExcelClipboard(pastedText, ';');
-	
+
+		let hasHeaderRow = false;
+		if (parsedRows.length > 0) {
+			const firstRow = parsedRows[0];
+			hasHeaderRow = firstRow.some(cell => {
+				const lower = cell.toLowerCase();
+				return lower.includes('дата') || lower.includes('тип') || lower.includes('дистанция') || lower.includes('время') || lower.includes('темп') || lower.includes('скорость') || lower.includes('набор') || lower.includes('комментарий');
+			});
+			
+			if (hasHeaderRow)
+				parsedRows.shift();
+		}
+
+		if (parsedRows.length === 0)
+			return;
+
+		const rowIdxFix = hasHeaderRow ? 2 : 1;
 		let addedCount = 0;
-		parsedRows.forEach(row => {
-			const res = CData.fromCSVRow(row);
-			if (res.data) {
-				const isDuplicate = this._data.some(item =>
-					item.date === res.data.date &&
-					item.type === res.data.type &&
-					item.distance === res.data.distance &&
-					item.seconds === res.data.seconds
-				);
-				if (isDuplicate)
-					return;
-				
-				this._data.push(res.data);
-				addedCount++;
-			} else if (res.err)
-				console.warn('Ошибка импорта строки:', res.err, row);
+		const rowErrors = [];
+
+		parsedRows.forEach((row, idx) => {
+			try {
+				const res = CData.fromCSVRow(row);
+				if (res.data) {
+					const isDuplicate = this._data.some(item =>
+						item.date === res.data.date &&
+						item.type === res.data.type &&
+						item.distance === res.data.distance &&
+						item.seconds === res.data.seconds
+					);
+					if (isDuplicate)
+						return;
+					
+					this._data.push(res.data);
+					addedCount++;
+				} else if (res.err) {
+					console.warn('Ошибка импорта строки:', idx + rowIdxFix.err, row);
+					rowErrors.push(`строка ${idx + rowIdxFix}: ${res.err}`);
+				}
+			} catch (err) {
+				console.warn('Критическая ошибка при разборе строки:', idx + rowIdxFix, err, row);
+				rowErrors.push(`строка ${idx + rowIdxFix}: ${err.message || 'неизвестная ошибка'}`);
+			}
 		});
+
+		if (rowErrors.length > 0)
+			alert('Ошибки при вставке некоторых строк:\n' + rowErrors.join('\n'));
 	
 		if (addedCount > 0) {
 			this._save();
